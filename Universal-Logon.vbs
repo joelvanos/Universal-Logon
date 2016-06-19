@@ -1,6 +1,6 @@
 REM Version Info
-	'  Universal Logon Script 1.9.0
-	'  Updated 20151217
+	'  Universal Logon Script 1.9.1
+	'  Updated 20160619
 	'
 	'
 REM Source Info
@@ -153,13 +153,13 @@ REM Set Global Variables
 	StrForcePrinter= "PDFCREATOR"
 	StrPaperVisionWebAssistant = "C:\Program Files (x86)\Digitech Systems\PaperVision\PVWA\DSI.PVWA.Host.exe"
 	binChangeDefault = True
-	StrLogUNC="\\wwt-fp01.wwtps.com\logs$\sessions_csv"
+	StrLogUNC="\\fp01\logs$\sessions_csv"
 	REM the Windows Dir is added at the end of the Setup the Shell Folders section
 	StrCompanyDefaultWallpaper="system32\oobe\info\backgrounds\background1920x1200.jpg"
 	StrCompanyDefaultWallpaperStyle="2"
 	strComputerOULong = CStr(objSysInfo.ComputerName)
 	StrCompanyDefaultWallpaper = objWindows.path & "\" & StrCompanyDefaultWallpaper
-	StrContact = "Support Desk @ (312) 704-2847"
+	StrContact = "Support Desk @ "
 	StrShLib = objProgramFilesx86.path & "\SysinternalsSuite\ShLib.exe"
 	DateYMD = DatePart("yyyy",Date) _
         & Right("0" & DatePart("m",Date), 2) _
@@ -178,7 +178,6 @@ REM
 	DicInstalledPrintersLocalExclude.Add "FACSYS FAX PRINTER","FXC"
 	DicInstalledPrintersLocalExclude.Add "MICROSOFT XPS DOCUMENT WRITER", "XPSPORT"
 	DicInstalledPrintersLocalExclude.Add "WEBEX DOCUMENT LOADER","WEBEX DOCUMENT LOADER PORT"
-	DicInstalledPrintersLocalExclude.Add "10.68.22.16","wwt-ms01"
 	DicInstalledPrintersLocalExclude.Add "SEND TO ONENOTE 2010","NUL"
 	DicInstalledPrintersLocalExclude.Add "SEND TO ONENOTE 2013","NUL"
 	DicInstalledPrintersLocalExclude.Add "SEND TO ONENOTE 16","NUL"
