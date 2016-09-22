@@ -1,6 +1,6 @@
 REM Version Info
-	'  Universal Logon Script 1.9.1
-	'  Updated 20160619
+	'  Universal Logon Script 1.9.2
+	'  Updated 20160922
 	'
 	'
 REM Source Info
@@ -35,6 +35,7 @@ REM Define Variables
 	Dim objReg
 	Dim colFiles
 	Dim ObjFile
+	Dim objWindow
 	
 	Dim colWMIResults
 	Dim ItemWMIResults
@@ -73,6 +74,7 @@ REM Define Variables
 	Dim strOSVersion
 	Dim StrCompanyDefaultWallpaper
 	Dim StrCompanyDefaultWallpaperStyle
+	Dim strCompanyName
 	Dim StrContact
 	
 	Dim IntTemp	
@@ -141,6 +143,8 @@ REM Setup the Shell Folders
 	Set ObjUserProfile = objFolder.Self		
 	
 REM Set Global Variables
+
+	strCompanyName = "Company Name"
 	strFileServer = "fp03"
 	strFileServerUsers = "fp01"
 	strPrintServer = "fp01"
@@ -171,6 +175,8 @@ REM
 	DicInstalledPrintersLocalExclude.Add "SHRFAX","FAX"
 	DicInstalledPrintersLocalExclude.Add "WEBEX DOCUMENT LOADER PORT","WEBEX DOCUMENT LOADER"
 	DicInstalledPrintersLocalExclude.Add "PDFCMON", "PDFCREATOR"
+	DicInstalledPrintersLocalExclude.Add "PORTPROMPT", "MICROSOFT PRINT TO PDF"
+	DicInstalledPrintersLocalExclude.Add "MICROSOFT PRINT TO PDF", "MICROSOFT PRINT TO PDF"
 	DicInstalledPrintersLocalExclude.Add "XPSPORT", "MICROSOFT XPS DOCUMENT WRITER"
 	DicInstalledPrintersLocalExclude.Add "DOCUMENTS\*.PDF", "ADOBE PDF"
 	DicInstalledPrintersLocalExclude.Add "FXC","FACSYS PRINTER"
@@ -181,6 +187,7 @@ REM
 	DicInstalledPrintersLocalExclude.Add "SEND TO ONENOTE 2010","NUL"
 	DicInstalledPrintersLocalExclude.Add "SEND TO ONENOTE 2013","NUL"
 	DicInstalledPrintersLocalExclude.Add "SEND TO ONENOTE 16","NUL"
+	DicInstalledPrintersLocalExclude.Add "SEND TO ONENOTE 2016","NUL"
 	DicInstalledPrintersLocalExclude.Add "BROTHER QL-500","BROTHER QL-500"
 	DicInstalledPrintersLocalExclude.Add "CANON GENERIC FAX DRIVER (FAX)","CANON GENERIC FAX DRIVER (FAX)"
 	DicInstalledPrintersLocalExclude.Add "PDF-XCHANGE5","PDF-XCHANGE PRINTER 2012"
@@ -190,7 +197,7 @@ REM Set setting for IE
 	Call IESettings
 REM Check for error getting user-name
 	If strUserID = "" Then
-	  objWshShell.Popup "Logon script failed - Contact the Support Desk", , _
+	  objWshShell.Popup "Logon script failed - " & StrContact, , _
 	    "Logon script", 48
 	  Call Cleanup
 	End If
@@ -200,7 +207,17 @@ REM Calls Clock in Time
 	'	Call StartIE("https://timeclock","")
 	'End IF
 REM Calls IE for Logon script Echo
-	Call StartIE("Logging","Desktop Configuration - Please Wait . . . ")
+	Call StartIE("Logging", strCompanyName & " Desktop Configuration - Please Wait . . . ")
+	'Get around Download Web Browser - Internet Explorer nag
+	'https://support.microsoft.com/en-us/kb/3123303
+	'for each objWindow in objShell.Windows
+	'if InStr(objWindow.FullName,"iexplore") then
+	'	if InStr(objWindow.document.title,"Download Web Browser - Internet Explorer") then
+	'		objWindow.Quit
+	'	end if
+	'end if
+	'next
+	
 REM Gather some basic system info
 	Call GetSystemInfo
 REM Logs Login time
@@ -208,7 +225,7 @@ REM Logs Login time
 REM Reset Citrix Receiver
 	'Call ResetCitrixReceiver(20151113)
 REM Display welcome message
-	Call UserPrompt ("<H1>Desktop Configuration</H1><hr style=""width:100%""></hr>Welcome " _
+	Call UserPrompt ("<H1>" & strCompanyName & " Desktop Configuration</H1><hr style=""width:100%""></hr>Welcome " _
 		& objNTUser.FullName &" - <B>Please don't close this window.</B>" )
 	Call UserPrompt ("You are logging on to <B>" & strRealWorkstation & "</B>." )	
 	Call UserPrompt ("Current Date is: " & Date() & " at " & Time())
@@ -218,6 +235,8 @@ REM  PrinterChange
 	'Call PrinterRemove("5","Software" & False) 'If All is put in it will remove all network printers all the time. The Second command is to change print servers
 REM Slow down the script
 	'WScript.Sleep 1500
+	'Call UserPrompt ("Computer OU: " & strComputerOU)
+	'Call UserPrompt ("objSysInfo.ComputerName : " & objSysInfo.ComputerName)
 REM Start Citrix Receiver 
 	REM If intProcessorWidth = "64" Then
 		REM If objFileSys.FileExists(objProgramFilesx86.path & "\Citrix\ICA Client\concentr.exe") Then
@@ -644,14 +663,14 @@ REM Shortcut Clean Up
 		REM If  objFileSys.FileExists(objProgramFilesx86.path & "\Citrix\ICA Client\SelfServicePlugin\SelfService.exe") Then
 			REM objWshShell.Run Chr(34) & objProgramFilesx86.path & "\Citrix\ICA Client\SelfServicePlugin\SelfService.exe" & Chr(34) & " -logoff –rmPrograms -logon -poll -exit",1,True
 		REM End If 
-		If objFileSys.FolderExists(objSM.path) Then 
-			Call UserPrompt ("&nbsp;&nbsp;&nbsp;Shortcut Cleanup:" & objSM.Name)
-			ShortcutCleanUp  objSM.path
-		End If 
-		If objFileSys.FolderExists(strUserHomeShare & "\Desktop") Then 
-			Call UserPrompt ("&nbsp;&nbsp;&nbsp;Shortcut Cleanup:" & "Desktop")
-			ShortcutCleanUp  strUserHomeShare & "\Desktop"
-		End If 
+		REM If objFileSys.FolderExists(objSM.path) Then 
+			REM Call UserPrompt ("&nbsp;&nbsp;&nbsp;Shortcut Cleanup:" & objSM.Name)
+			REM ShortcutCleanUp  objSM.path
+		REM End If 
+		REM If objFileSys.FolderExists(strUserHomeShare & "\Desktop") Then 
+			REM Call UserPrompt ("&nbsp;&nbsp;&nbsp;Shortcut Cleanup:" & "Desktop")
+			REM ShortcutCleanUp  strUserHomeShare & "\Desktop"
+		REM End If 
 	End If
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 'Add horizontal line as a 'break'
@@ -684,10 +703,16 @@ REM Show Clock on Terminal Server
 	'End If
 	'objReg.SetBinaryValue HKEY_CURRENT_USER,"Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects2","Settings",arrKey
 	'Set arrKey = Nothing
+REM Fix Adobe X Issue
+	REM objReg.GetbinaryValue HKEY_CURRENT_USER,"Software\Adobe\Acrobat Reader\10.0\Privileged","bProtectedMode",arrKey
+	REM If isNull(arrKey) then
+		REM objReg.CreateKey HKEY_CURRENT_USER,"Software\Adobe\Acrobat Reader\10.0\Privileged"
+	REM End If
+	REM objWshShell.RegWrite "HKCU\Software\Adobe\Acrobat Reader\10.0\Privileged\bProtectedMode",0,"REG_DWORD"
 
 REM Inform user that logon process is done -- Finished network log-on processes
 	Call UserPrompt ("Finished network log-on processes")
-	objIntExplorer.Quit( )	
+	objIntExplorer.Quit( )
 	Call Cleanup
 
 	
@@ -1133,8 +1158,8 @@ REM Shortcut Clean Up
 		Set objFileSys = CreateObject("Scripting.FileSystemObject")
 		Set objFolder = objFileSys.GetFolder(strFolder)
 		Set dicpathList	= CreateObject("Scripting.Dictionary")
-
 		Set colFiles = objFolder.Files
+
 		If colFiles.Count > 0 Then
 			For Each ObjFile in objFolder.Files
 				If lcase(Right(ObjFile.Name,3)) = "lnk" Then
@@ -1172,11 +1197,11 @@ REM Reset Citrix Receiver
 		' Dependencies		
 		' Usage:		Call ResetCitrixReceiver  [date change]
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		On Error Resume Next
+		'On Error Resume Next
 		Dim colProcessList
 		Dim objProcess
 		Dim objShell
-		Dim intWWTRCRDate
+		Dim intRCRDate
 		Dim objWMIService
 		Dim objRegistry
 		Dim strKeyPath
@@ -1199,18 +1224,18 @@ REM Reset Citrix Receiver
 		'Set objRegistry = GetObject("winmgmts:\\.\root\default:StdRegProv")
 		 
 		strKeyPath = "Software\Citrix"
-		strValueName = "WWTRCRDate"
+		strValueName = "RCRDate"
 		objRegistry.GetDWORDValue HKEY_CURRENT_USER,strKeyPath,strValueName,strValue
 
 		If IsNull(strValue) Then
-			intWWTRCRDate = 0
+			intRCRDate = 0
 		Else
-			intWWTRCRDate = strValue
+			intRCRDate = strValue
 		End If
 
 		REM DateYMD
-		If IntDateChange > intWWTRCRDate Then
-			Call UserPrompt ("Resetting Citrix Receiver Last Reset: " & intWWTRCRDate)
+		If IntDateChange > intRCRDate Then
+			Call UserPrompt ("Resetting Citrix Receiver Last Reset: " & intRCRDate)
 			REM Kill Citrix
 			Set objWMIService = GetObject("winmgmts:" _
 				& "{impersonationLevel=impersonate}!\\.\root\cimv2")
@@ -1231,7 +1256,7 @@ REM Reset Citrix Receiver
 			Set objShell = CreateObject("Wscript.Shell") 
 			objShell.Run Chr(34) & objProgramFilesx86.path & "\Citrix\ICA Client\SelfServicePlugin\CleanUp.exe" & Chr(34) & " -cleanUser -silent"
 			REM Update Registry
-			objWshShell.RegWrite "HKCU\Software\Citrix\WWTRCRDate", IntDateChange , "REG_DWORD"
+			objWshShell.RegWrite "HKCU\Software\Citrix\RCRDate", IntDateChange , "REG_DWORD"
 			
 			REM Clean up
 			Set objShell = Nothing
@@ -1278,7 +1303,7 @@ REM DeleteRegEntry
 		If (lRC <> 0) Then
 
 		' Subkey Enumerator
-		   On Error Resume Next
+		   'On Error Resume Next
 
 		   lRC = objRegistry.EnumKey(sHive, sEnumPath, sNames)
 
@@ -1325,7 +1350,6 @@ REM Default Wallpaper Fix Sub
 		If objFileSys.FileExists(StrlocCompanyDefaultWallpaper) Then
 			'Get current wallpaper
 			StrWallPaper = objWshShell.RegRead("HKCU\Control Panel\Desktop\Wallpaper")
-
 			Select Case Ucase(StrWallPaper)
 				Case "C:\PROGRAM FILES\CITRIX\ENHANCEDDESKTOPEXPERIENCE\CITRIX_LOGO.JPG" 'XenApp Default Wallpaper
 					objWshShell.RegWrite "HKCU\Control Panel\Desktop\Wallpaper", StrlocCompanyDefaultWallpaper , "REG_SZ"
@@ -1391,7 +1415,7 @@ REM Printer Change Sub
 		' Usage:
 		'           	Call PrinterRemove ([Reg Revision Number], [Reg path], [New Printer Server])
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		On Error Resume Next
+		'On Error Resume Next
 		
 		Dim objPrinter
 		Dim objNTPrinter
@@ -1484,7 +1508,7 @@ REM Get Main Printer Groups and Call AddPrinter Sub
 		Dim arrPrintDescription
 		Dim strPrintqueue
 		Dim strPrintServerLocal
-		On Error Resume Next
+		'On Error Resume Next
 
 		Set objOU = GetObject(objOU)
 		If Not IsEmpty (objOU) Then
@@ -1531,8 +1555,7 @@ REM Get Main Printer Groups and Call AddPrinter Sub
 										objWshShell.Popup strMsg,, "Logon Error! Unable to connect to network printer.", 48
 								End Select
 								'Adds printer with printer server in the AD Group Description field.
-								If binChangeDefault Then
-									
+								If binChangeDefault Then								
 									Call AddPrinter (strPrintServerLocal, strPrintqueue, True, bnSetDefault)
 								Else
 									Call AddPrinter (strPrintServerLocal, strPrintqueue, True, False)
@@ -1876,7 +1899,7 @@ REM PinItem
 	'*				   arrOSVersion		Array that has Windows Version
 	'* Returns:        True if the shortcut is created, else false
 	'********************************************************************
-		On Error Resume Next
+		'On Error Resume Next
 
 		Dim colVerbs
 		Dim itemverb
@@ -2046,7 +2069,8 @@ REM GetSystemInfo
 		Set getOSVersion = objWshShell.exec("%comspec% /c ver")	
 		Do Until getOSVersion.Status
 			Wscript.Sleep 250
-		Loop 	
+		Loop
+		
 		strOSVersion  = Trim(getOSVersion.stdout.readall)
 		'Src String    Start on n in Version and add 1 for the space   
 		'Get the length and subtract the starting position mince 3 (n + space + ])
@@ -2109,22 +2133,41 @@ REM GetSystemInfo
 				DicMappedDrives.Add  objDrives.Item(i), objDrives.Item(i+1)
 		    End If
 		Next
+		'Resets Default printer off DicInstalledPrintersLocalExclude List
+		'Call UserPrompt ("StrOldDefault=" & StrOldDefault )
+		REM If DicInstalledPrintersLocalExclude.Exists(Ucase(StrOldDefault)) Then
+			REM If Not StrInstalledPrintersLocal = "" Then
+				REM objWshNetwork.SetDefaultPrinter StrInstalledPrintersLocal
+				REM Call UserPrompt ("Changing Printer to: <B>" & StrInstalledPrintersLocal & " </B> from: " & StrOldDefault)
+			REM Elseif Not StrLastNetworkPrinter = "" Then
+				REM objWshNetwork.SetDefaultPrinter StrLastNetworkPrinter
+				REM Call UserPrompt ("Changing Printer to: <B>" & StrLastNetworkPrinter & " </B> from: " & StrOldDefault)				
+			REM Else 
+				REM 'objWshNetwork.SetDefaultPrinter StrForcePrinter
+				REM 'Call UserPrompt ("Changing Printer to: <B>" & StrForcePrinter & " </B> from: " & StrOldDefault)					
+			REM End If
+		REM End If
 		
 		REM Web Browser Versions
 			'Chrome Version
-			If objFileSys.FileExists(objProgramFilesx86.path & "\Google\Chrome\Application\chrome.exe") Then
-				strChromeVersion = objFileSys.GetFileVersion(objProgramFilesx86.path & "\Google\Chrome\Application\chrome.exe")		
+			If Not Isnull(objProgramFilesx86) Then
+				If objFileSys.FileExists(objProgramFilesx86.path & "\Google\Chrome\Application\chrome.exe") Then
+					strChromeVersion = objFileSys.GetFileVersion(objProgramFilesx86.path & "\Google\Chrome\Application\chrome.exe")		
+				End If	
 			End If
 			If objFileSys.FileExists(objProgramFiles.path & "\Google\Chrome\Application\chrome.exe") Then
 				strChromeVersion = objFileSys.GetFileVersion(objProgramFiles.path & "\Google\Chrome\Application\chrome.exe")
 			End If
 			'FireFox Version
-			If objFileSys.FileExists(objProgramFilesx86.path & "\Mozilla Firefox\firefox.exe") Then
-				strFireFoxVersion = objFileSys.GetFileVersion(objProgramFilesx86.path & "\Mozilla Firefox\firefox.exe")		
+			If Not Isnull(objProgramFilesx86) Then
+				If objFileSys.FileExists(objProgramFilesx86.path & "\Mozilla Firefox\firefox.exe") Then
+					strFireFoxVersion = objFileSys.GetFileVersion(objProgramFilesx86.path & "\Mozilla Firefox\firefox.exe")		
+				End If
 			End If
 			If objFileSys.FileExists(objProgramFiles.path & "\Mozilla Firefox\firefox.exe") Then
 				strFireFoxVersion = objFileSys.GetFileVersion(objProgramFiles.path & "\Mozilla Firefox\firefox.exe")
 			End If
+
 			'IE Version
 			If objFileSys.FileExists(objProgramFiles.path & "\Internet Explorer\iexplore.exe") Then
 				strIEVersion = objFileSys.GetFileVersion(objProgramFiles.path & "\Internet Explorer\iexplore.exe")
@@ -2196,15 +2239,18 @@ REM Setup IE Sub
 		' Dependencies 
 		' Usage:    Call SetupIE [URL or "LOGGING"],[Window Title]
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		'On Error Resume Next
-
+		On Error Resume Next
 		Dim intCount    'Counter used during AppActivate
 
 		'Create reference to objIntExplorer
 		'This will be used for the user messages. Also set IE display attributes
-		Set objIntExplorer = Nothing
+		If Not isnull(objIntExplorer) Then Set objIntExplorer = Nothing
 		Set objIntExplorer = Wscript.CreateObject("InternetExplorer.Application")
-
+		If Err.Number <> 0 Then
+			WScript.Sleep(5000)
+			if Not isnull(objIntExplorer) Then Set objIntExplorer = Nothing
+			Set objIntExplorer = Wscript.CreateObject("InternetExplorer.Application")			
+		End IF
 		If Not UCase(strPage) = "LOGGING" Then
 			With objIntExplorer
 				.Navigate strPage
@@ -2240,6 +2286,10 @@ REM Setup IE Sub
 			End With
 			'Show IE
 			objIntExplorer.Visible = 1
+			'Wait for IE to finish
+			Do While (objIntExplorer.Busy)
+				Wscript.Sleep 50
+			Loop
 		End If
 
 		'Make IE the active window
@@ -2260,7 +2310,7 @@ REM UserPrompt Sub
 		' Dependencies	objIntExplorer
 		' Usage:
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-	    On Error Resume Next
+	    'On Error Resume Next
 	    objIntExplorer.Document.WriteLn (strPrompt & "<br />")
 	End Sub
 	''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -2290,7 +2340,7 @@ REM Single Instance
 		' Dependencies	None
 		' Usage:    	Call SingleInstance
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		On Error Resume Next
+		'On Error Resume Next
 		Dim objWMIService
 		Dim objWMIResults
 		Dim objWMILoop
@@ -2329,8 +2379,8 @@ REM Cleanup Sub
 		' Dependencies	All
 		' Usage:    	Call Cleanup
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		On Error Resume Next
-		Set objUser 	   = Nothing
+		'On Error Resume Next
+		'Set objUser 	   = Nothing
 		Set objFileSys     = Nothing
 		Set objWshNetwork  = Nothing
 		Set objWshShell    = Nothing
