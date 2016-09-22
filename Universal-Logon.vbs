@@ -1,5 +1,5 @@
 REM Version Info
-	'  Universal Logon Script 1.9.2
+	'  Universal Logon Script 1.9.3
 	'  Updated 20160922
 	'
 	'
@@ -225,7 +225,7 @@ REM Logs Login time
 REM Reset Citrix Receiver
 	'Call ResetCitrixReceiver(20151113)
 REM Display welcome message
-	Call UserPrompt ("<H1>" & strCompanyName & " Desktop Configuration</H1><hr style=""width:100%""></hr>Welcome " _
+	Call UserPrompt ("<H1><center>" & strCompanyName & " <br>Desktop Configuration</H1><hr style=""width:100%""></center></hr>Welcome " _
 		& objNTUser.FullName &" - <B>Please don't close this window.</B>" )
 	Call UserPrompt ("You are logging on to <B>" & strRealWorkstation & "</B>." )	
 	Call UserPrompt ("Current Date is: " & Date() & " at " & Time())
@@ -1050,6 +1050,36 @@ REM Task-bar Setup
 			End If
 		End If 
 	
+	End Sub
+REM PinCorrector
+	Sub PinCorrector(strFileName,strCorrectPath)
+ 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		' Sub:     		PinCorrector 
+		' Purpose:  	Updates Pined Items
+		' Input:		
+		' Output:
+		' Dependencies	objFileSys,objAppData,objWshShell,PinItem
+		' Usage:		Call PinCorrector  
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''	
+	
+		Dim objShortcut
+		Dim objFile
+
+		For Each objFile in objFileSys.GetFolder(objAppData.path & "\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar").Files
+			If UCase(objFileSys.getextensionname(objFile)) = "LNK" Then
+				Set objShortcut = objWshShell.CreateShortcut(objFile.path)
+				If UCase(Right(objShortcut.TargetPath, Len(strFileName))) = UCase(strFileName) Then
+					If Not UCase(objShortcut.TargetPath) = UCase(strCorrectPath) Then
+						Call PinItem(objFile.path, True, True)
+						Set objShortcut = Nothing
+						Call PinItem(strCorrectPath, True, False)
+						Exit Sub
+					End If
+				End If
+				Set objShortcut = Nothing
+			End If
+		Next
+
 	End Sub
 	
 REM Libraries Cleanup
@@ -2062,21 +2092,21 @@ REM GetSystemInfo
 		Dim colRunningServices
 		Dim objService 
 		Dim StrLastNetworkPrinter
-		Dim getOSVersion
+		Dim ObjWMI
+		Dim ObjOS
 		
 		'Gets OS version
-		'Should find out how to do this via WMI
-		Set getOSVersion = objWshShell.exec("%comspec% /c ver")	
-		Do Until getOSVersion.Status
-			Wscript.Sleep 250
-		Loop
-		
-		strOSVersion  = Trim(getOSVersion.stdout.readall)
-		'Src String    Start on n in Version and add 1 for the space   
-		'Get the length and subtract the starting position mince 3 (n + space + ])
-		strOSVersion  = Mid(strOSVersion,InStr(strOSVersion,"n ") + 1,Len(strOSVersion) - (InStr(strOSVersion,"n ") +3) )
+		Set ObjWMI = objWMIService.ExecQuery ("Select * from Win32_OperatingSystem")
+		For Each ObjOS in ObjWMI
+			If Not Trim(ObjOS.Version) = "" Then
+				If Trim(strOSVersion) = "" Then
+					strOSVersion = ObjOS.Version
+				else
+					strOSVersion = strOSVersion & "," & ObjOS.Version
+				End If
+			End If 
+		Next
 		arrOSVersion = Split (strOSVersion,".")
-		
 		'Get computer or terminal server name
 		strName = objWshShell.ExpandEnvironmentStrings( "%CLIENTNAME%" )
 		If strName <> "%CLIENTNAME%" AND strName <> "" Then
@@ -2090,13 +2120,13 @@ REM GetSystemInfo
 		'Gets the OU the Computer is in AD
 		arrDNComputer = Split(objSysInfo.ComputerName,",")
 		strComputerOU = Right (arrDNComputer(1),len(arrDNComputer(1)) - 3)		
+
 		
 		'Check to see if the Printer Spooler is running
 		Set colRunningServices =  objWMIService.ExecQuery("Select * from Win32_Service Where Name = 'Spooler'")
 		For Each objService in colRunningServices 
 			If objService.State = "Running" Then binPrintSpooler = True
 		Next
-		
 		'Makes a Dictionary of all currently installed printers; if printer spooler is running		
 		Set colItems = objWMIService.ExecQuery("SELECT * FROM Win32_Printer")
 		If Not IsNull(colItems) and binPrintSpooler Then
@@ -2125,7 +2155,6 @@ REM GetSystemInfo
 				End If 
 			Next
 		End If
-		
 		'Makes a Dictionary of all currently mapped drives	
 		Set objDrives = objWshNetwork.EnumNetworkDrives		
 		For i = 0 to objDrives.Count - 1 Step 2
@@ -2147,7 +2176,6 @@ REM GetSystemInfo
 				REM 'Call UserPrompt ("Changing Printer to: <B>" & StrForcePrinter & " </B> from: " & StrOldDefault)					
 			REM End If
 		REM End If
-		
 		REM Web Browser Versions
 			'Chrome Version
 			If Not Isnull(objProgramFilesx86) Then
@@ -2158,6 +2186,7 @@ REM GetSystemInfo
 			If objFileSys.FileExists(objProgramFiles.path & "\Google\Chrome\Application\chrome.exe") Then
 				strChromeVersion = objFileSys.GetFileVersion(objProgramFiles.path & "\Google\Chrome\Application\chrome.exe")
 			End If
+
 			'FireFox Version
 			If Not Isnull(objProgramFilesx86) Then
 				If objFileSys.FileExists(objProgramFilesx86.path & "\Mozilla Firefox\firefox.exe") Then
@@ -2185,7 +2214,8 @@ REM GetSystemInfo
 		Set colRunningServices		= Nothing
 		Set objService 				= Nothing
 		Set StrLastNetworkPrinter	= Nothing
-		Set getOSVersion			= Nothing
+		Set ObjWMI					= Nothing
+		Set ObjOS					= Nothing
 	End Sub
 	''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 REM RecordLogon Sub
