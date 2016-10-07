@@ -2089,8 +2089,6 @@ REM GetSystemInfo
 		Dim objItem
 		Dim objDrives
 		Dim i
-		Dim colRunningServices
-		Dim objService 
 		Dim StrLastNetworkPrinter
 		Dim ObjWMI
 		Dim ObjOS
@@ -2123,10 +2121,8 @@ REM GetSystemInfo
 
 		
 		'Check to see if the Printer Spooler is running
-		Set colRunningServices =  objWMIService.ExecQuery("Select * from Win32_Service Where Name = 'Spooler'")
-		For Each objService in colRunningServices 
-			If objService.State = "Running" Then binPrintSpooler = True
-		Next
+		If  objShell.IsServiceRunning("Spooler") Then binPrintSpooler = True
+
 		'Makes a Dictionary of all currently installed printers; if printer spooler is running		
 		Set colItems = objWMIService.ExecQuery("SELECT * FROM Win32_Printer")
 		If Not IsNull(colItems) and binPrintSpooler Then
@@ -2211,8 +2207,6 @@ REM GetSystemInfo
 		Set objItem					= Nothing
 		Set objDrives				= Nothing
 		Set i						= Nothing
-		Set colRunningServices		= Nothing
-		Set objService 				= Nothing
 		Set StrLastNetworkPrinter	= Nothing
 		Set ObjWMI					= Nothing
 		Set ObjOS					= Nothing
